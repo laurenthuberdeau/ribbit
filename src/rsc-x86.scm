@@ -34,18 +34,26 @@
 
 (def-prim 'rib 3 (lambda (cgc)
   (if debug? (begin (display "#  ") (write '($rib)) (newline)))
-  ;; TODO...
-  (x86-pop  cgc (x86-rax)) ;; ce code est incorrect!
-  (x86-pop  cgc (x86-rax))
-  (x86-pop  cgc (x86-rax))
-  (x86-push cgc (x86-imm-int 400 0))))
+  ;; TODO: On doit aussi vérifier s'il reste de la mémoire et appeler le gc si non.
+  (x86-mov cgc (x86-rax) (x86-r10))          ;; temp = r10
+  (x86-add cgc (x86-r10) (x86-imm-int 24 0)) ;; r10 = r10 + 3*8 bytes
+  (x86-pop cgc (x86-mem 0 (x86-rax)))        ;; temp[0] <- pop
+  (x86-pop cgc (x86-mem 8 (x86-rax)))        ;; temp[1] <- pop
+  (x86-pop cgc (x86-mem 16 (x86-rax)))       ;; temp[2] <- pop
+  (x86-add cgc (x86-rax) (x86-imm-int 7 0))  ;; Add tag
+  (x86-push cgc (x86-rax))))
 
 (def-prim 'rib? 1 (lambda (cgc)
   (define done (asm-make-label* cgc))
   (if debug? (begin (display "#  ") (write '($rib?)) (newline)))
-  ;; TODO...
-  (x86-pop  cgc (x86-rax)) ;; ce code est incorrect!
-  (x86-push cgc (x86-imm-int 400 0))))
+  (x86-pop  cgc (x86-rax))                   ;; pop x into rax
+  (x86-and  cgc (x86-rax) (x86-imm-int 7 0)) ;; Compare tag of x with ..111
+  (x86-mov  cgc (x86-rax) (false-value cgc)) ;; result = #t (maybe)
+  ;; Jump if the tag is ..000. Otherwise, is not 0 (so ..111)
+  (x86-je   cgc done)
+  (x86-mov  cgc (x86-rax) (true-value cgc))  ;; result = #f
+  (x86-label cgc done)
+  (x86-push cgc (x86-rax))))
 
 (def-prim 'field0 1 (lambda (cgc)
   (if debug? (begin (display "#  ") (write '($field0)) (newline)))
@@ -96,11 +104,16 @@
   (x86-push cgc (x86-rax))))                 ;; push result
 
 (def-prim '< 2 (lambda (cgc)
+  (define done (asm-make-label* cgc))
   (if debug? (begin (display "#  ") (write '($<)) (newline)))
-  ;; TODO...
-  (x86-pop  cgc (x86-rax)) ;; ce code est incorrect!
-  (x86-pop  cgc (x86-rax))
-  (x86-push cgc (x86-imm-int 400 0))))
+  (x86-pop  cgc (x86-rbx))                   ;; pop y into rbx
+  (x86-pop  cgc (x86-rax))                   ;; pop x into rax
+  (x86-cmp  cgc (x86-rax) (x86-rbx))         ;; compare x and y
+  (x86-mov  cgc (x86-rax) (true-value cgc))  ;; result = #t (maybe)
+  (x86-jl   cgc done)                        ;; x < y?
+  (x86-mov  cgc (x86-rax) (false-value cgc)) ;; result = #f
+  (x86-label cgc done)
+  (x86-push cgc (x86-rax))))                 ;; push result
 
 (def-prim '+ 2 (lambda (cgc)
   (if debug? (begin (display "#  ") (write '($+)) (newline)))
@@ -114,10 +127,11 @@
 
 (def-prim '* 2 (lambda (cgc)
   (if debug? (begin (display "#  ") (write '($*)) (newline)))
-  ;; TODO...
-  (x86-pop  cgc (x86-rax)) ;; ce code est incorrect!
-  (x86-pop  cgc (x86-rax))
-  (x86-push cgc (x86-imm-int 400 0))))
+  (x86-pop  cgc (x86-rbx))                   ;; pop y into rbx
+  (x86-pop  cgc (x86-rax))                   ;; pop x into rax
+  (x86-shr  cgc (x86-rax) (x86-imm-int 3 0)) ;; x >> 3 (remove tag from x)
+  (x86-mul  cgc (x86-rbx))                   ;; rax <- rax * rbx
+  (x86-push cgc (x86-rax))))
 
 (def-prim 'quotient 2 (lambda (cgc)
   (if debug? (begin (display "#  ") (write '($quotient)) (newline)))
