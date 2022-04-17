@@ -253,9 +253,9 @@
 
 (define (gen-iffalse cgc lbl)
   (if debug? (begin (display "#  ") (write (cons 'iffalse (cons (asm-label-id lbl) '()))) (newline)))
-  ;; TODO...
-  (x86-push cgc (x86-imm-int 1 0)) ;; code à remplacer!
-  (x86-call cgc (x86-global-label cgc 'exit)))
+  (x86-pop cgc (x86-rax))               ;; pop x into rax
+  (x86-cmp cgc (x86-rax) (false-value cgc)) ;; compare x and #f
+  (x86-je  cgc lbl))                    ;; x == #f?
 
 (define (gen-goto cgc lbl)
   (if debug? (begin (display "#  ") (write (cons 'goto (cons (asm-label-id lbl) '()))) (newline)))
