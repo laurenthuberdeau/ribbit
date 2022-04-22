@@ -37,9 +37,9 @@
   ;; TODO: On doit aussi vérifier s'il reste de la mémoire et appeler le gc si non.
   (x86-mov cgc (x86-rax) (x86-r10))          ;; temp = r10
   (x86-add cgc (x86-r10) (x86-imm-int 24 0)) ;; r10 = r10 + 3*8 bytes
-  (x86-pop cgc (x86-mem 0 (x86-rax)))        ;; temp[0] <- pop
+  (x86-pop cgc (x86-mem 16 (x86-rax)))       ;; temp[0] <- pop
   (x86-pop cgc (x86-mem 8 (x86-rax)))        ;; temp[1] <- pop
-  (x86-pop cgc (x86-mem 16 (x86-rax)))       ;; temp[2] <- pop
+  (x86-pop cgc (x86-mem 0 (x86-rax)))        ;; temp[2] <- pop
   (x86-add cgc (x86-rax) (x86-imm-int 7 0))  ;; Add tag
   (x86-push cgc (x86-rax))))
 
